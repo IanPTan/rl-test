@@ -2,6 +2,9 @@ import torch as pt
 from model import Actor, Critic
 from game import Game
 
+def rbot(state):
+    return pt.randn(9)
+
 def ppoUpdate(actor, critic, actorOptimizer, criticOptimizer, states, actions, rewards, oldProbs, clip_param=0.2, c1=0.5, c2=0.01):
     states = pt.stack(states)
     actions = pt.tensor(actions, dtype=pt.long)
@@ -41,7 +44,38 @@ def ppoUpdate(actor, critic, actorOptimizer, criticOptimizer, states, actions, r
 def compute_entropy(probs):
     return -pt.sum(probs * pt.log(probs + 1e-10), dim=-1)  # the + 1e-10 helps avoid log(0)
 
+def bot_play(game, bot, model, turn=1, show=False):
+    inputs = pt.zeros(0,19)
+    moves = pt.zeros(0,9)
+
+    done = False
+    print('starting game')
+    while not done:
+        state = game.get_state()
+        if turn:
+            move = bot(state)
+            player = "Bot (Player 2)"
+        else:
+            move = model(state)
+            player = "AI (Player 1)"
+        done = game.move(move)
+
+        inputs = pt.cat((inputs, state.view(1,19)))
+        moves = pt.cat((moves, move.view(1,9)))
+        turn = 1 - turn # this switches the turn
+
+        if show:
+            print(f"{player}'s move:")
+            # game.print()
+            print(game.grid)
+            print()
+
+    return inputs, moves, game.winner
+
 def train(epochs=1000):
+    totalAI = 0
+    totalBot = 0
+    totalDraw = 0
     actor = Actor()
     critic = Critic()
     actorOptimizer = pt.optim.Adam(actor.parameters(), lr=1e-4)
@@ -55,7 +89,8 @@ def train(epochs=1000):
 
         while not done:
             state = game.get_state()
-            actionProbs = actor(state)
+            with pt.no_grad():
+                actionProbs = actor(state)
             action = pt.multinomial(actionProbs, 1).item()  # sample an action
             oldProb = actionProbs[action]  # store the probability of the chosen action
 
@@ -68,10 +103,34 @@ def train(epochs=1000):
             oldProbs.append(oldProb)
 
         # update the actor and critic using PPO
-        ppoUpdate(actor, critic, actorOptimizer, criticOptimizer, states, actions, rewards, oldProbs)
+        for _ in range(8): 
+            ppoUpdate(actor, critic, actorOptimizer, criticOptimizer, states, actions, rewards, oldProbs)
 
-        if epoch % 100 == 0:
-            print(f"Epoch {epoch}, Reward: {sum(rewards)}")
+        if epoch:
+            print(f"Epoch {epoch}, Reward: {sum(rewards)}, Winner: {game.winner}, Final Turn: {game.turn}")
+            test_game = Game()
+            inputs, moves, winner = bot_play(test_game, rbot, actor, turn=1, show=True)
+            print(f"Bot play test at Epoch {epoch}: Winner: {winner}", flush=True)
+            print(f"Bot play test at Epoch {epoch}: Winner: {'AI (Player 1)' if winner == 1 else 'Bot (Player 2)' if winner == -1 else 'Draw'}")
+
+            if (winner==1):
+                totalAI += 1
+            elif (winner==-1): 
+                totalBot += 1
+            else: totalDraw +=1
+
+    print(f"Total AI win: {totalAI}, total bot win: {totalBot}, total draw: {totalDraw}")
+
+
+
+def test_bot_play():
+    actor = Actor() 
+    game = Game()
+    inputs, moves, winner = bot_play(game, rbot, actor, turn=1, show=True)
+    print(f"Winner: {winner}")
 
 if __name__ == "__main__":
-    train() 
+    try:
+        train() 
+    except Exception as e:
+        print(f"Error occurred: {e}")
