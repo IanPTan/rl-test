@@ -8,7 +8,9 @@ class Game:
         self.winner = -1  
 
     def get_state(self):
-        return self.grid.view(-1).float()  # flatten grid into a 1D tensor
+        state = self.grid.view(-1).float()  # flatten grid into a 1D tensor
+        turn = pt.tensor([self.turn], dtype=pt.float32) # this should do the turning grid
+        return pt.cat((state, turn))
 
     def get_open(self):
         return 1 - self.grid.sum(dim=0).view(-1).float()  # 1 for open, 0 for taken to see which cells are open

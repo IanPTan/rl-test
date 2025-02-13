@@ -66,7 +66,6 @@ def bot_play(game, bot, model, turn=1, show=False):
 
         if show:
             print(f"{player}'s move:")
-            # game.print()
             print(game.grid)
             print()
 
