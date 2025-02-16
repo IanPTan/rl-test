@@ -79,6 +79,30 @@ def train(epochs=1000):
 
     game = Game()
     for epoch in range(epochs):
+
+        if epoch % 100 == 0:
+            #print(f"Epoch {epoch}, Reward: {sum(rewards)}, Winner: {game.winner}, Final Turn: {game.turn}")
+            test_game = Game()
+            totalAI = 0
+            totalBot = 0
+            totalDraw = 0
+            for i in range(100):
+                inputs, moves, winner = bot_play(test_game, rbot, actor, turn=1, show=False)
+                test_game.reset()
+            #print(f"Bot play test at Epoch {epoch}: Winner: {winner}", flush=True)
+            #print(f"Bot play test at Epoch {epoch}: Winner: {'AI (Player 1)' if winner == 1 else 'Bot (Player 2)' if winner == -1 else 'Draw'}")
+
+                if (winner==1):
+                    totalAI += 1
+                elif (winner==-1): 
+                    totalBot += 1
+                else: totalDraw +=1
+
+            print(f"Epoch {epoch}, Total AI win: {totalAI}, total bot win: {totalBot}, total draw: {totalDraw}")
+
+
+
+
         states, actions, rewards, oldProbs = [], [], [], []
         game.reset()
         done = False
@@ -101,26 +125,6 @@ def train(epochs=1000):
         # update the actor and critic using PPO
         for _ in range(8): 
             ppoUpdate(actor, critic, actorOptimizer, criticOptimizer, states, actions, rewards, oldProbs)
-
-        if epoch % 100 == 0:
-            #print(f"Epoch {epoch}, Reward: {sum(rewards)}, Winner: {game.winner}, Final Turn: {game.turn}")
-            test_game = Game()
-            totalAI = 0
-            totalBot = 0
-            totalDraw = 0
-            for i in range(100):
-                inputs, moves, winner = bot_play(test_game, rbot, actor, turn=1, show=False)
-                test_game.reset()
-            #print(f"Bot play test at Epoch {epoch}: Winner: {winner}", flush=True)
-            #print(f"Bot play test at Epoch {epoch}: Winner: {'AI (Player 1)' if winner == 1 else 'Bot (Player 2)' if winner == -1 else 'Draw'}")
-
-                if (winner==1):
-                    totalAI += 1
-                elif (winner==-1): 
-                    totalBot += 1
-                else: totalDraw +=1
-
-            print(f"Epoch {epoch}, Total AI win: {totalAI}, total bot win: {totalBot}, total draw: {totalDraw}")
 
 
 
