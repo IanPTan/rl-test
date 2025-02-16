@@ -49,7 +49,7 @@ def bot_play(game, bot, model, turn=1, show=False):
     moves = pt.zeros(0,9)
 
     done = False
-    print('starting game')
+    #print('starting game')
     while not done:
         state = game.get_state()
         if turn:
@@ -72,9 +72,6 @@ def bot_play(game, bot, model, turn=1, show=False):
     return inputs, moves, game.winner
 
 def train(epochs=1000):
-    totalAI = 0
-    totalBot = 0
-    totalDraw = 0
     actor = Actor()
     critic = Critic()
     actorOptimizer = pt.optim.Adam(actor.parameters(), lr=1e-4)
@@ -105,27 +102,32 @@ def train(epochs=1000):
         for _ in range(8): 
             ppoUpdate(actor, critic, actorOptimizer, criticOptimizer, states, actions, rewards, oldProbs)
 
-        if epoch:
-            print(f"Epoch {epoch}, Reward: {sum(rewards)}, Winner: {game.winner}, Final Turn: {game.turn}")
+        if epoch % 100 == 0:
+            #print(f"Epoch {epoch}, Reward: {sum(rewards)}, Winner: {game.winner}, Final Turn: {game.turn}")
             test_game = Game()
-            inputs, moves, winner = bot_play(test_game, rbot, actor, turn=1, show=True)
-            print(f"Bot play test at Epoch {epoch}: Winner: {winner}", flush=True)
-            print(f"Bot play test at Epoch {epoch}: Winner: {'AI (Player 1)' if winner == 1 else 'Bot (Player 2)' if winner == -1 else 'Draw'}")
+            totalAI = 0
+            totalBot = 0
+            totalDraw = 0
+            for i in range(100):
+                inputs, moves, winner = bot_play(test_game, rbot, actor, turn=1, show=False)
+                test_game.reset()
+            #print(f"Bot play test at Epoch {epoch}: Winner: {winner}", flush=True)
+            #print(f"Bot play test at Epoch {epoch}: Winner: {'AI (Player 1)' if winner == 1 else 'Bot (Player 2)' if winner == -1 else 'Draw'}")
 
-            if (winner==1):
-                totalAI += 1
-            elif (winner==-1): 
-                totalBot += 1
-            else: totalDraw +=1
+                if (winner==1):
+                    totalAI += 1
+                elif (winner==-1): 
+                    totalBot += 1
+                else: totalDraw +=1
 
-    print(f"Total AI win: {totalAI}, total bot win: {totalBot}, total draw: {totalDraw}")
+            print(f"Epoch {epoch}, Total AI win: {totalAI}, total bot win: {totalBot}, total draw: {totalDraw}")
 
 
 
 def test_bot_play():
     actor = Actor() 
     game = Game()
-    inputs, moves, winner = bot_play(game, rbot, actor, turn=1, show=True)
+    inputs, moves, winner = bot_play(game, rbot, actor, turn=1, show=False)
     print(f"Winner: {winner}")
 
 if __name__ == "__main__":
