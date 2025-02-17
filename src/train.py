@@ -74,19 +74,19 @@ def bot_play(game, bot, model, turn=1, show=False):
 def train(epochs=1000):
     actor = Actor()
     critic = Critic()
-    actorOptimizer = pt.optim.Adam(actor.parameters(), lr=1e-4)
-    criticOptimizer = pt.optim.Adam(critic.parameters(), lr=1e-3)
+    actorOptimizer = pt.optim.Adam(actor.parameters(), lr=1e-6)
+    criticOptimizer = pt.optim.Adam(critic.parameters(), lr=1e-5)
 
     game = Game()
     for epoch in range(epochs):
 
-        if epoch % 100 == 0:
+        if epoch % 10 == 0:
             #print(f"Epoch {epoch}, Reward: {sum(rewards)}, Winner: {game.winner}, Final Turn: {game.turn}")
             test_game = Game()
             totalAI = 0
             totalBot = 0
             totalDraw = 0
-            for i in range(100):
+            for i in range(1000):
                 inputs, moves, winner = bot_play(test_game, rbot, actor, turn=1, show=False)
                 test_game.reset()
             #print(f"Bot play test at Epoch {epoch}: Winner: {winner}", flush=True)
@@ -123,7 +123,7 @@ def train(epochs=1000):
             oldProbs.append(oldProb)
 
         # update the actor and critic using PPO
-        for _ in range(8): 
+        for _ in range(32): 
             ppoUpdate(actor, critic, actorOptimizer, criticOptimizer, states, actions, rewards, oldProbs)
 
 
